@@ -24,9 +24,11 @@ If the executable is missing, automation is disabled, or the reported protocol i
 1. Read the current capabilities instead of relying on remembered engines, voices, formats, or defaults.
 2. Run `videohero doctor --workflow <workflow> --format json` before expensive generation. For a concrete request, include its input and output parameters when the installed CLI supports them.
 3. Resolve the requested voice from `videohero voices list --format json`. Use its stable `id`, not its localized title. If the user's description matches multiple voices, present the meaningful candidates instead of choosing silently.
-4. Submit the operation with absolute paths and `--format json`. Prefer `--text-file` for long or sensitive text.
-5. For a returned job id, use `videohero jobs wait <job-id> --format ndjson` when the user wants the current turn to wait; otherwise report the job id and use `jobs status` later. Use `jobs cancel` only when the user requests cancellation or the current task explicitly authorizes it.
+4. Submit the operation with absolute paths and `--format json` without `--wait`, then parse the returned job id. Prefer `--text-file` for long or sensitive text.
+5. For a returned job id, use `videohero jobs wait <job-id> --format ndjson` when the user wants the current turn to wait; otherwise report the job id and use `jobs status` later. During presentation jobs, relay meaningful stage/progress changes and an `estimate` when present. An absent estimate means VideoHero has insufficient compatible history; never invent a completion time. Use `jobs cancel` only when the user requests cancellation or the current task explicitly authorizes it.
 6. Treat success as confirmed only when the final state is `succeeded`, `delivery.state` is `delivered`, and the CLI exits with code 0. Return the receipt's actual `destinationPath` and any warnings.
+
+Presentation rendering creates and continuously saves an editable VideoHero project by default when `capabilities.presentation.persistsProject` is true. Do not add or invent a `--save-project` option. Text-to-speech remains a temporary audio job and must not create a VideoHero project. In both cases, never write VideoHero's SwiftData store or project directory yourself; the App owns persistence.
 
 Do not download models, accept licenses, enable agent control, authorize a personal voice, overwrite an existing output, or retry a failed generation with materially different settings unless the user has authorized that action. A timeout is not evidence that submission failed: query the job or retry with the same idempotency key.
 

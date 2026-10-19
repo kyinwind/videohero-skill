@@ -26,9 +26,10 @@ videohero tts generate \
   --engine <engine-id> \
   --voice <voice-id> \
   --language auto \
-  --format json \
-  --wait
+  --format json
 ```
+
+Parse the returned job id, then wait with `videohero jobs wait <job-id> --format ndjson` when the current turn should follow progress.
 
 Before submission:
 
@@ -54,8 +55,13 @@ videohero presentation render \
   --script-source notes-or-body \
   --aspect source \
   --subtitles burn \
-  --format json \
-  --wait
+  --format json
+```
+
+Parse the returned job id, then stream progress:
+
+```bash
+videohero jobs wait <job-id> --format ndjson
 ```
 
 Before submission:
@@ -69,6 +75,26 @@ Before submission:
 - Do not invoke Keynote conversion unless the installed capabilities advertise it and the user has allowed the required macOS automation prompt.
 
 Expected primary artifact is MP4. The current P0 implementation does not return a separate SRT artifact. Preserve and report any warnings returned by the job.
+
+When `capabilities.presentation.persistsProject` is `true`, `presentation render` also creates an editable VideoHero project automatically. The project is created after preflight and is visible in VideoHero while generation is running; successful projects retain their PPTX/PDF, slide images, narration audio, previews, and an internal exported video in VideoHero's managed project storage. No `--save-project` parameter exists or is needed. A failed or cancelled import may be removed using the same cleanup semantics as a failed UI import.
+
+This persistence rule applies only to presentation jobs. `tts generate` remains a temporary audio job and does not add an item to VideoHero's project list.
+
+After VideoHero parses the presentation and resolves narration, status updates may include:
+
+```json
+{
+  "estimate": {
+    "estimatedTotalSeconds": 420,
+    "elapsedSeconds": 58,
+    "estimatedRemainingSeconds": 362,
+    "basedOnRecordCount": 3,
+    "updatedAt": "2026-10-19T07:20:00Z"
+  }
+}
+```
+
+Treat this as a historical estimate, not a deadline. Report it with the current stage and percentage when useful. If `estimate` is absent, say that VideoHero does not yet have enough compatible export history; do not calculate a time from `progress` alone.
 
 ## Jobs and errors
 
@@ -84,6 +110,8 @@ videohero jobs result <job-id> --output "/absolute/new/path" --format json
 ```
 
 Terminal states are `succeeded`, `failed`, and `cancelled`. Non-terminal states are expected to include `submitted`, `queued`, `preflighting`, `running`, `finalizing`, and `cancelling`.
+
+`jobs wait --format ndjson` emits one complete JSON object whenever the observed status changes. Each line can include `stage`, `progress`, `message`, and the optional presentation `estimate`. Parse lines incrementally and surface meaningful changes rather than waiting for EOF. Text mode also streams human-readable updates; `--format json` intentionally emits only one final JSON document and is not a live-progress format.
 
 `succeeded` means VideoHero generated and verified the staged artifact. Delivery to the user-requested path is tracked separately in the result envelope's `delivery` object. A synchronous command is complete only when `delivery.state` is `delivered` and the process exits with code 0. If delivery fails, preserve the job id and use `jobs result` to retry delivery; do not regenerate the media. Use `--overwrite` only when the user authorized replacing the destination; use `--output` to deliver the same staged artifact to a different absolute path.
 
