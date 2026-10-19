@@ -1,0 +1,40 @@
+---
+name: videohero
+description: Operate the local VideoHero app through its supported CLI to discover voices and models, generate speech from text, render PPTX/PDF presentations as narrated videos, and monitor or cancel VideoHero jobs. Use when a user asks an agent to create media with VideoHero; do not use for generic media tools or UI-click automation.
+---
+
+# VideoHero
+
+Use VideoHero only through its supported `videohero` CLI. Do not automate the SwiftUI interface, edit VideoHero's SwiftData store, call its private helper executables, or construct files inside its project directories.
+
+Resolve the CLI executable from an absolute path supplied by the user or test kit, then from an absolute `VIDEOHERO_CLI`, and only then from the `videohero` command on `PATH`. Keep using that exact resolved executable for the whole workflow. Start with:
+
+```bash
+CLI="/absolute/path/supplied/by/the/user/bin/videohero"
+"$CLI" version --format json
+"$CLI" capabilities --format json
+```
+
+If no absolute path was supplied, resolve `command -v videohero` and use its returned absolute path as `CLI`.
+
+If the executable is missing, automation is disabled, or the reported protocol is incompatible, stop and explain what the user must enable or install in VideoHero. Do not substitute guessed commands. The expected first stable protocol is version 1.
+
+## Workflow
+
+1. Read the current capabilities instead of relying on remembered engines, voices, formats, or defaults.
+2. Run `videohero doctor --workflow <workflow> --format json` before expensive generation. For a concrete request, include its input and output parameters when the installed CLI supports them.
+3. Resolve the requested voice from `videohero voices list --format json`. Use its stable `id`, not its localized title. If the user's description matches multiple voices, present the meaningful candidates instead of choosing silently.
+4. Submit the operation with absolute paths and `--format json`. Prefer `--text-file` for long or sensitive text.
+5. For a returned job id, use `videohero jobs wait <job-id> --format ndjson` when the user wants the current turn to wait; otherwise report the job id and use `jobs status` later. Use `jobs cancel` only when the user requests cancellation or the current task explicitly authorizes it.
+6. Treat success as confirmed only when the final state is `succeeded`, `delivery.state` is `delivered`, and the CLI exits with code 0. Return the receipt's actual `destinationPath` and any warnings.
+
+Do not download models, accept licenses, enable agent control, authorize a personal voice, overwrite an existing output, or retry a failed generation with materially different settings unless the user has authorized that action. A timeout is not evidence that submission failed: query the job or retry with the same idempotency key.
+
+## Routes
+
+- For text-to-speech, read [references/cli-protocol.md](references/cli-protocol.md#text-to-speech).
+- For PPTX/PDF-to-video, read [references/cli-protocol.md](references/cli-protocol.md#presentation-to-video).
+- For job states, structured errors, recovery, or cancellation, read [references/cli-protocol.md](references/cli-protocol.md#jobs-and-errors).
+- When the user asks to install, configure, or test the local integration, read [references/setup-and-testing.md](references/setup-and-testing.md).
+
+Keep paths as separate command arguments. Do not interpolate user text into shell syntax. When a request is complex, write a versioned request JSON supported by `capabilities` and pass its path rather than assembling a fragile command line.

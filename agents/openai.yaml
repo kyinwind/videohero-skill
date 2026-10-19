@@ -1,0 +1,4 @@
+interface:
+  display_name: "VideoHero"
+  short_description: "Create speech and narrated videos with VideoHero"
+  default_prompt: "Use $videohero to generate media with my local VideoHero app."
