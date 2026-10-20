@@ -2,6 +2,23 @@
 
 本文件记录 VideoHero Skill 的重要变更。
 
+## [0.3.0] - 2026-10-20
+
+### Added
+
+- 记录稳定个人音色 ID `videohero.personal-voice.v1`，以及 Qwen3 TTS、CosyVoice、MOSS-TTS Nano 的支持范围。
+- 增加“我的声音”的发现、TTS/PPT 视频调用、授权恢复和验收说明。
+- 增加个人音色需求分析、技术架构、数据库/持久化、风险、测试与开发计划文档。
+
+### Changed
+
+- 要求智能体只在 `voices list` 为所选引擎实际返回个人音色时使用该 ID，不能根据本地化标题猜测或静默替换引擎。
+- 明确 Skill/CLI 不得替用户完成个人声音同意、登记、验证或读取参考音频；`authorization_required` 必须交还用户处理。
+
+### Data
+
+- 无数据库或 Skill 持久化格式变更；个人声音素材不进入 Skill、CLI job 或 Automation App Group。
+
 ## [0.2.0] - 2026-10-19
 
 ### Added

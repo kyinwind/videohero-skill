@@ -65,6 +65,8 @@ Then query current capabilities:
 
 Choose only a ready engine and a voice belonging to it. Run `doctor` with the concrete engine, voice, input, and output settings before generation.
 
+For a personal-voice test, the user must first complete VideoHero's visible “我的声音” flow. Then verify that `videohero.personal-voice.v1` appears for `qwen3PresetVoice`, `cosyVoice` when available, and `mossTTSNano`, but not for `kokoroTTS`. Do not inspect or copy the underlying reference audio. If the id is absent, report the missing authorization and let the user resolve it in VideoHero before querying again.
+
 ## Safe smoke tests
 
 Use new absolute output paths and do not add `--overwrite` for the first run:

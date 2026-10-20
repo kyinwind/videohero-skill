@@ -15,6 +15,12 @@ videohero doctor --workflow <tts|presentation-to-video> --format json
 
 Use exact engine and voice ids returned by discovery. A model marked missing or an engine marked unavailable is a preflight failure; do not begin a long generation and hope that it repairs itself.
 
+### Personal voice discovery
+
+VideoHero exposes the user's authorized “我的声音” with the stable id `videohero.personal-voice.v1`. It may appear once for each compatible engine: `qwen3PresetVoice`, `cosyVoice` when that engine is available on the platform, and `mossTTSNano`. It must not appear for `kokoroTTS`.
+
+Use the id only when the current `voices list --engine <engine-id>` result contains that exact entry. The title is localized and is not an identifier. Absence means the personal voice is unavailable or its Pro/consent/enrollment/reference-audio authorization is incomplete or invalid. The agent may ask the user to finish the “我的声音” flow in VideoHero, but must not perform or bypass that flow. Re-run discovery after the user completes it.
+
 ## Text-to-speech
 
 Use exactly one of `--text` and `--text-file`. Prefer a UTF-8 text file for multi-paragraph, quoted, shell-sensitive, or private content.
@@ -37,7 +43,7 @@ Before submission:
 - Confirm the requested output format is advertised.
 - Do not overwrite an existing output without the user's instruction.
 - If language is omitted or `auto`, report a language-detection warning from the result rather than hiding it.
-- Personal voice ids may require an authorization already completed in VideoHero. Never work around `authorization_required`.
+- The personal voice id `videohero.personal-voice.v1` requires authorization already completed in VideoHero and may be used only with an engine that advertised it. Never work around `authorization_required`.
 
 The current P0 implementation advertises WAV only. M4A remains part of the intended v1 surface but must not be requested until `capabilities` advertises it. Confirm the final job state and artifact path; do not infer success from a progress value of 1.0 alone.
 
@@ -71,6 +77,7 @@ Before submission:
 - `notes-or-body` uses notes when non-empty and otherwise uses extracted body text. Use `notes` only when the user expects empty notes to be an error.
 - Obtain supported values from capabilities. The current P0 implementation supports aspect values `source`, `16:9`, `4:3`, and `9:16`, and subtitle values `off` and `burn`. Treat `srt`, `burn-and-srt`, and custom dimensions as unavailable until a future capability response explicitly advertises them.
 - Read these values from the structured `presentation` capability object (`narrationSources`, `aspectRatios`, `subtitleModes`, and `videoFormats`); do not infer them from the human-readable `notes` array.
+- For “我的声音”, pass `videohero.personal-voice.v1` only after it appears for the selected engine. VideoHero rechecks authorization when the job runs, so a previously discovered voice can still return `authorization_required` if the user later withdraws or loses authorization.
 - Treat page-limit or `license_required` results as a user action, not a reason to truncate silently.
 - Do not invoke Keynote conversion unless the installed capabilities advertise it and the user has allowed the required macOS automation prompt.
 
@@ -126,7 +133,7 @@ Common error handling:
 | `voice_not_found` | Refresh `voices list`; do not guess a replacement. |
 | `model_not_ready` / `helper_not_ready` | Report the advertised recovery action. Install only with user authorization. |
 | `license_required` | Stop and tell the user which VideoHero entitlement is required. |
-| `authorization_required` | Ask the user to complete the named VideoHero/macOS authorization. |
+| `authorization_required` | Ask the user to complete or restore the named VideoHero/macOS authorization, then refresh capabilities and `voices list`. Never switch voices silently. |
 | `automation_disabled` | Ask the user to enable local agent control in VideoHero settings. |
 | `protocol_incompatible` | Stop and request a VideoHero/skill update. |
 | `restart_interrupted` | Query artifacts and caches, then offer a retry with the same request and idempotency key. |

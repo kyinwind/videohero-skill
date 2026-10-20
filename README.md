@@ -5,6 +5,7 @@
 ## 能力
 
 - 查询 VideoHero、模型、语音引擎和音色能力。
+- 在用户已于 VideoHero 完成授权时，发现并使用“我的声音”生成 TTS 或 PPT 视频。
 - 将文字生成 WAV 音频；TTS 是临时任务，不创建项目。
 - 使用匹配的 PPTX/PDF 生成 MP4，默认创建并持续保存可编辑的 VideoHero 项目。
 - 查询、等待和取消异步 job，以 NDJSON 持续接收阶段、百分比和说明。
@@ -95,6 +96,16 @@ CLI="/videohero-skill/绝对路径/bin/macos-universal/videohero"
 
 `--format json` 返回单一最终 JSON，不用于实时进度。没有兼容历史样本时，任务会正常运行但不会返回 estimate，智能体不得自行编造时间。
 
+## 使用“我的声音”
+
+先在 VideoHero 的“我的声音”界面完成 Pro 校验、声音使用同意、登记和验证，然后按引擎查询：
+
+```bash
+"$CLI" voices list --engine qwen3PresetVoice --format json
+```
+
+只有返回列表中存在稳定 ID `videohero.personal-voice.v1` 时才能将它传给 `--voice`。当前支持 Qwen3 TTS、CosyVoice（平台公开时）和 MOSS-TTS Nano，KokoroTTS 不支持。Skill 和 CLI 不会替用户接受协议、登记声音或读取个人参考音频；若返回 `authorization_required`，应让用户回到 VideoHero 完成或恢复授权后重新查询。
+
 ## 文档
 
 - [CLI 协议参考](references/cli-protocol.md)
@@ -102,6 +113,7 @@ CLI="/videohero-skill/绝对路径/bin/macos-universal/videohero"
 - [独立 CLI 分发方案](docs/20261019-cli-bundling-and-installation.md)
 - [预计耗时与实时进度设计](docs/20261019-cli-video-estimate-and-live-progress.md)
 - [CLI 项目持久化设计](docs/20261019-cli-project-persistence.md)
+- [CLI“我的声音”支持设计](docs/20261020-cli-personal-voice.md)
 
 ## 安全边界
 
