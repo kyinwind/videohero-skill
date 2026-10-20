@@ -7,17 +7,19 @@ description: Operate the local VideoHero app through its supported CLI to discov
 
 Use VideoHero only through its supported `videohero` CLI. Do not automate the SwiftUI interface, edit VideoHero's SwiftData store, call its private helper executables, or construct files inside its project directories.
 
-Resolve the CLI executable from an absolute path supplied by the user or test kit, then from an absolute `VIDEOHERO_CLI`, and only then from the `videohero` command on `PATH`. Keep using that exact resolved executable for the whole workflow. Start with:
+This Skill ships the supported standalone CLI at `bin/macos-universal/videohero`. The CLI is a thin client; the VideoHero App still performs generation. Enabling local agent control in VideoHero authorizes automation but does not install the CLI. Do not treat the GUI executable or bundled private speech helpers as substitutes.
+
+Resolve the CLI executable in this order: an absolute path supplied by the user; an absolute `VIDEOHERO_CLI`; `command -v videohero`; then `bin/macos-universal/videohero` relative to this `SKILL.md`. Resolve the bundled path to an absolute path before invoking it. Do not scan DerivedData, `.build`, old test kits, App bundles, or arbitrary private executables. Keep using the first executable absolute path for the whole workflow. Start with:
 
 ```bash
-CLI="/absolute/path/supplied/by/the/user/bin/videohero"
+CLI="/absolute/path/to/videohero"
 "$CLI" version --format json
 "$CLI" capabilities --format json
 ```
 
-If no absolute path was supplied, resolve `command -v videohero` and use its returned absolute path as `CLI`.
+If no absolute path was supplied, try each supported source in order and verify it is executable before use.
 
-If the executable is missing, automation is disabled, or the reported protocol is incompatible, stop and explain what the user must enable or install in VideoHero. Do not substitute guessed commands. The expected first stable protocol is version 1.
+If the bundled executable or checksum is missing, report that the installed Skill is incomplete and ask the user to update it; do not search elsewhere. When the user asks to install the command into PATH, read the setup reference and use this Skill's `scripts/install.sh`. If automation is disabled or the reported protocol is incompatible, explain that separate condition. Do not substitute guessed commands. The expected first stable protocol is version 1.
 
 ## Workflow
 

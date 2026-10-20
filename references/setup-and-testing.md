@@ -1,28 +1,61 @@
 # VideoHero local setup and testing
 
-Use this reference only for local installation, development test kits, or first-run diagnostics.
+Use this reference only for installation, first-run diagnostics, or local integration testing.
+
+## Distribution boundary
+
+The Skill ships the supported standalone CLI at:
+
+```text
+bin/macos-universal/videohero
+```
+
+The CLI must be a notarized Universal Binary with a hardened Developer ID signature from team `AL7WHQ783W`, the team-scoped Automation App Group entitlement, and no App Sandbox entitlement. The TestFlight App does not contain this CLI. Generation still runs in the VideoHero App process; the CLI is only the external client.
+
+Do not run `VideoHero.app/Contents/MacOS/VideoHero` as the CLI, invoke private helper plug-ins, or search DerivedData, `.build`, old test kits, or the filesystem for alternatives.
 
 ## Resolve the executable
 
-Prefer an explicit test-kit path when the user supplies one:
+Use the first executable in this order and retain its absolute path for the whole workflow:
+
+1. An absolute path explicitly supplied by the user.
+2. An absolute `VIDEOHERO_CLI` environment value.
+3. The absolute result of `command -v videohero`.
+4. `bin/macos-universal/videohero` relative to this Skill root.
+
+Example for the bundled CLI:
 
 ```bash
-VIDEOHERO_CLI="/absolute/path/to/videohero-agent-testkit/bin/videohero"
+SKILL_ROOT="/absolute/path/to/videohero-skill"
+VIDEOHERO_CLI="$SKILL_ROOT/bin/macos-universal/videohero"
+"$SKILL_ROOT/scripts/verify.sh" "$VIDEOHERO_CLI"
 "$VIDEOHERO_CLI" version --format json
 ```
 
-Otherwise resolve the installed command with `command -v videohero`. Do not copy or replace an executable unless the user asked for installation. A VideoHero repository checkout can create a signed test kit with `scripts/prepare_videohero_agent_testkit.sh`; that script packages this independent Skill repository and accepts its path as the second argument or through `VIDEOHERO_SKILL_SOURCE`.
+If the bundled CLI or `videohero.sha256` is missing, stop and report that the Skill installation is incomplete. Do not fall back to an App-internal or development binary.
+
+## Install into PATH
+
+Only install when the user requests installation or the surrounding task clearly includes it:
+
+```bash
+SKILL_ROOT="/absolute/path/to/videohero-skill"
+"$SKILL_ROOT/scripts/install.sh"
+```
+
+The default destination is `~/.local/bin/videohero`. The script verifies the source, refuses an unrelated destination, copies atomically, and verifies the result. It does not re-sign the binary or remove quarantine. A custom absolute source and destination may be passed as the first and second arguments.
+
+If signature verification fails, or Gatekeeper returns anything other than the documented standalone-CLI “valid code but not an App bundle” note, report the exact output and ask the user to update/re-download the Skill. Do not use `xattr` to bypass the failure.
 
 ## First run
 
-The current architecture uses the VideoHero App process, not an XPC automation helper. Before testing:
-
-1. Launch the VideoHero app from the same test kit/build as the CLI.
-2. In VideoHero settings, open the automation section and enable local agent control.
-3. Keep VideoHero running for the first test. A submitted URL may wake the app later, but cold-launch/no-window behavior is not yet a release guarantee.
+1. Install VideoHero through TestFlight or its official distribution channel.
+2. Open VideoHero settings and enable local agent control.
+3. Keep VideoHero running for the first test.
 4. Ensure at least one advertised TTS engine reports both `modelReady` and `helperReady`.
+5. Run the resolved CLI once, then run VideoHero's visible basic diagnostics. It should show the CLI version, protocol, path, and last-seen time.
 
-Then run:
+Then query current capabilities:
 
 ```bash
 "$VIDEOHERO_CLI" capabilities --format json
@@ -30,11 +63,11 @@ Then run:
 "$VIDEOHERO_CLI" voices list --format json
 ```
 
-Choose only an engine whose readiness fields are true and a voice belonging to that engine. Run `doctor` with the concrete engine, voice, input, and format settings before generation.
+Choose only a ready engine and a voice belonging to it. Run `doctor` with the concrete engine, voice, input, and output settings before generation.
 
 ## Safe smoke tests
 
-Use new absolute output paths. Do not add `--overwrite` for the first run.
+Use new absolute output paths and do not add `--overwrite` for the first run:
 
 ```bash
 "$VIDEOHERO_CLI" doctor \
@@ -52,25 +85,16 @@ Use new absolute output paths. Do not add `--overwrite` for the first run.
   --format json
 ```
 
-Parse the returned job id and follow it with:
+Parse the job id and follow it with:
 
 ```bash
 "$VIDEOHERO_CLI" jobs wait <job-id> --format ndjson
 ```
 
-For presentation testing, use a matching PPTX/PDF pair and run the concrete-input doctor command shown in the protocol reference before `presentation render`. Verify that multiple NDJSON lines arrive while the job is running. If prior exports exist for the selected engine, verify that later lines contain `estimate.estimatedTotalSeconds` and `estimate.estimatedRemainingSeconds`; a first run may legitimately have no estimate.
+For presentation testing, use a matching PPTX/PDF pair. Confirm that multiple NDJSON lines arrive while running. If compatible export history exists, later events may contain estimated total and remaining seconds; a first run may legitimately have no estimate.
 
-Also verify project persistence:
-
-1. Confirm `capabilities.presentation.persistsProject` is `true`.
-2. After the presentation job starts, confirm a project named from the original PPTX appears in VideoHero before the job succeeds.
-3. After success, open the project and confirm its pages, narration, selected engine/voice, subtitle setting, preview caches, and exported video are usable.
-4. Restart VideoHero and confirm the project remains available.
-5. Run a TTS-only smoke test and confirm it does not create a project-list item.
-6. For a disposable presentation job, test cancellation and confirm the incomplete project is removed.
-
-Do not inspect or modify VideoHero's SwiftData files directly. Project-directory inspection is only a developer smoke-test step when the user explicitly asks for local integration testing; normal agents should rely on capabilities, job status, and the VideoHero UI.
+Also verify that a presentation project appears in VideoHero while it is running and remains editable after success. Confirm a TTS-only job creates no project. For a disposable presentation job, test cancellation and confirm the incomplete project is removed.
 
 ## Reporting failures
 
-Return the CLI path, CLI/protocol version, selected engine and voice ids, command exit code, structured error code, job id if one was created, and whether VideoHero was already running. Do not include narration text or private input contents in logs.
+Return the exact CLI path, CLI/protocol version, selected engine and voice ids, command exit code, structured error code, job id if created, and whether VideoHero was already running. Do not include narration text or private input contents in logs.
