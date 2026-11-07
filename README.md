@@ -79,6 +79,7 @@ CLI="/videohero-skill/绝对路径/bin/macos-universal/videohero"
 先查询 capabilities、models 和 voices，运行具体参数的 doctor，然后提交：
 
 ```bash
+"$CLI" presentation export --project <project-id> --output "/absolute/demo.mp4"
 "$CLI" presentation render \
   --pptx "/absolute/path/deck.pptx" \
   --pdf "/absolute/path/deck.pdf" \

@@ -2,6 +2,24 @@
 
 本文件记录 VideoHero Skill 的重要变更。
 
+## [Unreleased]
+
+### Added
+
+- 协议版本 2：新增终态 `needs_review`（退出码 5）与工作流 `export-project`。
+- 新增 `videohero presentation export --project <uuid>`：人工质检完成后复用既有讲解音频完成导出，不重新生成 TTS。
+- `needs_review` 返回体携带 `reviewItems`（`page` / `reason` / `audioPath`）与 `nextAction`，供智能体把待审页面原样转告用户。
+
+### Changed
+
+- 智能体在收到 `needs_review` / 退出码 5 时**不得重试、不得重建项目**，应转告用户去 VideoHero 完成人工质检，再调用 `presentation export`。
+- `capabilities.workflows` 现在会声明 `export-project`；`presentation.supportsExportExistingProject` 标识是否支持续跑导出。
+- 协议版本不再兼容 1；CLI 与 App 必须同版本。
+
+### Data
+
+- 无 Skill 或 CLI 持久化格式变更；job 状态新增 `needs_review`，旧版本客户端无法解析。
+
 ## [0.3.0] - 2026-10-20
 
 ### Added

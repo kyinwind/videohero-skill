@@ -83,6 +83,17 @@ Before submission:
 
 Expected primary artifact is MP4. The current P0 implementation does not return a separate SRT artifact. Preserve and report any warnings returned by the job.
 
+
+### Presentation export
+
+```
+videohero presentation export --project <project-id> [--output <path>] [--overwrite] [--wait] [--format json]
+```
+
+Exports an existing VideoHero project without regenerating narration. Use it after a `needs_review` outcome has been fully reviewed in the app. The command is gated: if any page still awaits manual review it returns `needs_review` with the remaining `reviewItems` and exits with code 5. Requires `capabilities.workflows` to contain `export-project`; when absent the app is too old.
+
+The app writes the rendered video into its own project storage; the CLI delivers it to `--output`. Because the app is sandboxed, never expect VideoHero itself to write to an arbitrary user path.
+
 When `capabilities.presentation.persistsProject` is `true`, `presentation render` also creates an editable VideoHero project automatically. The project is created after preflight and is visible in VideoHero while generation is running; successful projects retain their PPTX/PDF, slide images, narration audio, previews, and an internal exported video in VideoHero's managed project storage. No `--save-project` parameter exists or is needed. A failed or cancelled import may be removed using the same cleanup semantics as a failed UI import.
 
 This persistence rule applies only to presentation jobs. `tts generate` remains a temporary audio job and does not add an item to VideoHero's project list.
@@ -116,9 +127,11 @@ videohero jobs result <job-id> --overwrite --format json
 videohero jobs result <job-id> --output "/absolute/new/path" --format json
 ```
 
-Terminal states are `succeeded`, `failed`, and `cancelled`. Non-terminal states are expected to include `submitted`, `queued`, `preflighting`, `running`, `finalizing`, and `cancelling`.
+Terminal states are `succeeded`, `needs_review`, `failed`, and `cancelled`. Non-terminal states are expected to include `submitted`, `queued`, `preflighting`, `running`, `finalizing`, and `cancelling`.
 
 `jobs wait --format ndjson` emits one complete JSON object whenever the observed status changes. Each line can include `stage`, `progress`, `message`, and the optional presentation `estimate`. Parse lines incrementally and surface meaningful changes rather than waiting for EOF. Text mode also streams human-readable updates; `--format json` intentionally emits only one final JSON document and is not a live-progress format.
+
+`needs_review` means VideoHero finished narration but at least one page failed the automatic quality gate in a way that requires a human to listen and confirm. The status carries `reviewItems` (`page`, `reason`, `audioPath`) and `nextAction`. No video artifact is produced in this state. The CLI exits with code 5; do not treat it as a failure or retry it. The project remains editable in VideoHero; after the user confirms every listed page, run `videohero presentation export --project <projectId>` to finish the export without regenerating narration.
 
 `succeeded` means VideoHero generated and verified the staged artifact. Delivery to the user-requested path is tracked separately in the result envelope's `delivery` object. A synchronous command is complete only when `delivery.state` is `delivered` and the process exits with code 0. If delivery fails, preserve the job id and use `jobs result` to retry delivery; do not regenerate the media. Use `--overwrite` only when the user authorized replacing the destination; use `--output` to deliver the same staged artifact to a different absolute path.
 

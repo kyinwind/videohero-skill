@@ -19,7 +19,7 @@ CLI="/absolute/path/to/videohero"
 
 If no absolute path was supplied, try each supported source in order and verify it is executable before use.
 
-If the bundled executable or checksum is missing, report that the installed Skill is incomplete and ask the user to update it; do not search elsewhere. When the user asks to install the command into PATH, read the setup reference and use this Skill's `scripts/install.sh`. If automation is disabled or the reported protocol is incompatible, explain that separate condition. Do not substitute guessed commands. The expected first stable protocol is version 1.
+If the bundled executable or checksum is missing, report that the installed Skill is incomplete and ask the user to update it; do not search elsewhere. When the user asks to install the command into PATH, read the setup reference and use this Skill's `scripts/install.sh`. If automation is disabled or the reported protocol is incompatible, explain that separate condition. Do not substitute guessed commands. The expected stable protocol is version 2 (version 1 clients are no longer supported).
 
 ## Workflow
 
@@ -30,6 +30,8 @@ If the bundled executable or checksum is missing, report that the installed Skil
 4. Submit the operation with absolute paths and `--format json` without `--wait`, then parse the returned job id. Prefer `--text-file` for long or sensitive text.
 5. For a returned job id, use `videohero jobs wait <job-id> --format ndjson` when the user wants the current turn to wait; otherwise report the job id and use `jobs status` later. During presentation jobs, relay meaningful stage/progress changes and an `estimate` when present. An absent estimate means VideoHero has insufficient compatible history; never invent a completion time. Use `jobs cancel` only when the user requests cancellation or the current task explicitly authorizes it.
 6. Treat success as confirmed only when the final state is `succeeded`, `delivery.state` is `delivered`, and the CLI exits with code 0. Return the receipt's actual `destinationPath` and any warnings.
+7. A presentation job may end in `needs_review` (CLI exit code 5). This is a **terminal and expected** outcome, not a failure: VideoHero generated the narration but some pages need the user to listen and confirm in the app. Do not retry, do not rebuild the project, and do not raise the automatic retry limit. Relay the returned `pages` list so the user knows exactly which pages need review, and tell them to finish the review in VideoHero.
+8. After the user confirms the review is done, continue with `videohero presentation export --project <projectID> --output <path>`. It reuses the already generated narration and never regenerates it. If any page is still unapproved, that command also returns `needs_review` with the remaining pages and exits with code 5.
 
 Presentation rendering creates and continuously saves an editable VideoHero project by default when `capabilities.presentation.persistsProject` is true. Do not add or invent a `--save-project` option. Text-to-speech remains a temporary audio job and must not create a VideoHero project. In both cases, never write VideoHero's SwiftData store or project directory yourself; the App owns persistence.
 
