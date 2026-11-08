@@ -24,9 +24,12 @@ git clone --branch 1.3.2 --depth 1 https://github.com/kyinwind/videohero-skill.g
 已有仓库时切换 tag：
 
 ```bash
-git fetch --tags
+git fetch --tags --force
 git checkout 1.3.2
 ```
+
+`--force` 用于更新被重建的 tag；本地已有旧的 `1.3.2` tag 时，普通的 `git fetch --tags`
+会拒绝覆盖，必须用上面的命令重新拉取。
 
 验证 CLI 与 App 的协议一致：
 

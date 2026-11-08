@@ -13,7 +13,7 @@ updated to 1.3.2 or later before installing tag `1.3.2`.
 
 ```bash
 defaults read /Applications/VideoHero.app/Contents/Info.plist CFBundleShortVersionString
-git fetch --tags
+git fetch --tags --force
 git checkout <version>
 ./bin/macos-universal/videohero version --format json
 ```
