@@ -2,10 +2,11 @@
 
 本文件记录 VideoHero Skill 的重要变更。
 
-## [Unreleased]
+## [1.3.2] - 2026-11-08
 
 ### Added
 
+- 新增版本匹配约定：Skill tag 名称对应 VideoHero App 版本；README 与安装参考补充版本查看、tag 切换、升级顺序和协议不匹配判断。
 - 新增引擎与音色“补参”机制：生成前必须把 capabilities 里的全部引擎、以及所选引擎的全部音色展示给用户，由用户显式指定 `--engine` 与 `--voice`。
 - 新增 `references/parameter-selection.md`：展示模板、委托选择、无交互宿主、歧义与失败重问规则。
 - 协议版本 2：新增终态 `needs_review`（退出码 5）与工作流 `export-project`。
@@ -14,11 +15,19 @@
 
 ### Changed
 
-- `tts generate` 与 `presentation render` 提交前，引擎和音色必须来自用户显式选择；智能体不得使用 CLI 缺省引擎/音色，也不得用标题、历史任务或记忆推断。
+- `1.3.2` tag 重建为本次最新 Skill 代码；App `1.3.1` 及更早版本需先升级到 `1.3.2` 或更高。
+- README 更新到协议 2 现状：能力列表补充 `needs_review` 与 `presentation export`，推荐视频调用方式改为 doctor → render → wait → export，个人声音引擎范围与已启用引擎一致，安装步骤要求先检出同名 tag。
+- `references/setup-and-testing.md` 增加版本匹配说明，并同步个人声音支持的引擎范围。
+- 引擎列表只展示已启用引擎；未启用的 Ming-3.0-TTS 即使被 capabilities 声明也不展示、不可提交。
+- `tts generate` 与 `presentation render` 提交前，引擎和音色必须来自用户显式选择；智能体不得依赖 CLI 兜底音色，也不得用标题、历史任务或记忆推断。
 - 引擎与音色以外的参数继续使用默认值，并在提交摘要中声明；`presentation export` 复用项目既有引擎和音色，不重新询问。
 - 智能体在收到 `needs_review` / 退出码 5 时**不得重试、不得重建项目**，应转告用户去 VideoHero 完成人工质检，再调用 `presentation export`。
 - `capabilities.workflows` 现在会声明 `export-project`；`presentation.supportsExportExistingProject` 标识是否支持续跑导出。
 - 协议版本不再兼容 1；CLI 与 App 必须同版本。
+
+### Removed
+
+- 撤回 `1.3.1` tag：其打包 CLI 仍是协议 1，与协议 2 文档不一致；不提供 1.3.1 的 Skill。
 
 ### Data
 

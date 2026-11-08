@@ -19,13 +19,14 @@ CLI="/absolute/path/to/videohero"
 
 If no absolute path was supplied, try each supported source in order and verify it is executable before use.
 
-If the bundled executable or checksum is missing, report that the installed Skill is incomplete and ask the user to update it; do not search elsewhere. When the user asks to install the command into PATH, read the setup reference and use this Skill's `scripts/install.sh`. If automation is disabled or the reported protocol is incompatible, explain that separate condition. Do not substitute guessed commands. The expected stable protocol is version 2 (version 1 clients are no longer supported).
+If the bundled executable or checksum is missing, report that the installed Skill is incomplete and ask the user to update it; do not search elsewhere. When the user asks to install the command into PATH, read the setup reference and use this Skill's `scripts/install.sh`. If automation is disabled, explain that separate condition. If the reported protocol is incompatible, tell the user the installed Skill does not match the VideoHero app version: each Skill tag is named after the app version. If no tag exists for the app version (currently anything below 1.3.2), ask the user to update VideoHero to 1.3.2 or later first; otherwise check out the tag matching the app version, then refresh capabilities. Do not substitute guessed commands, another binary, or a different protocol version. The expected stable protocol is version 2 (version 1 clients are no longer supported).
 
 ## Workflow
 
 1. Read the current capabilities instead of relying on remembered engines, voices, formats, or defaults.
 2. **Collect the engine and the voice from the user before any generation.** Read [references/parameter-selection.md](references/parameter-selection.md). This step applies to `tts generate` and `presentation render` and cannot be skipped:
-   - If the user has not explicitly named both an engine and a voice, do not submit; a CLI fallback is not a choice. Show **every** engine from `capabilities.ttsEngineIDs` (id, readiness, voice count), then **every** voice of the engine the user picks, and wait for the answer.
+   - If the user has not explicitly named both an engine and a voice, do not submit; a CLI fallback is not a choice. Show **every enabled** engine from `capabilities.ttsEngineIDs` (id, readiness, voice count), then **every** voice of the engine the user picks, and wait for the answer.
+   - Engines that VideoHero has not enabled for users are not choices: never display or submit them, even when `capabilities` still advertises them. `mingTTS` (Ming-3.0-TTS) is currently not enabled.
    - Show the complete lists: never truncate, shortlist, reorder into “recommended”, pre-select, or silently substitute.
    - If the user gave only one of the two, ask only for the missing one. If the user delegates the choice (“随便”, “you decide”), propose one concrete engine + voice pair and wait for confirmation.
    - A voice title is not an identifier; resolve it only after the full voice list is shown, and let the user confirm which engine it belongs to.

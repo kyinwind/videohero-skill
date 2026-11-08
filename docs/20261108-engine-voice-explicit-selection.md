@@ -25,7 +25,7 @@
 目标：
 
 - 任何 `tts generate` / `presentation render` 提交之前，引擎和音色都必须有用户显式给出的值；
-- 智能体必须把 `capabilities` 声明的全部引擎、以及所选引擎的全部音色完整展示给用户；
+- 智能体必须把 `capabilities` 里已启用的全部引擎、以及所选引擎的全部音色完整展示给用户；未启用的引擎不展示；
 - 引擎与音色之外的其他参数沿用默认值，并在提交摘要里声明；
 - 宿主无法向用户提问时，智能体停在“待补参”状态并返回清单，不得用默认值开跑。
 
@@ -34,6 +34,7 @@
 - 不修改 CLI 参数、协议版本、job 结构或持久化格式；
 - 不删除 CLI 侧的缺省能力（其他调用方仍可能依赖，删除属破坏性变更）；
 - 不在本次为 capabilities 增加引擎显示名字段；
+- 不在本次修改 App 的 capabilities 声明；未启用引擎由 Skill 侧过滤；
 - 不改变 `presentation export` 复用项目既有引擎/音色的语义。
 
 ## 参数分级
@@ -61,12 +62,13 @@ B 级“默认”是 Skill 统一采用的固定值，与应用界面默认一�
 - 用户说“随便 / 你决定 / 用默认的”不等于显式指定（见第 5 条）；
 - 不允许“用户没说 → 用 CLI 默认”这条路径。
 
-### 2. 展示全部引擎
+### 2. 展示全部已启用引擎
 
-用一轮消息展示 `capabilities` 的完整引擎集合，逐行包含：序号、引擎（id + 可读名）、
+用一轮消息展示 `capabilities` 里已启用的完整引擎集合，逐行包含：序号、引擎（id + 可读名）、
 就绪状态（`engineReadiness.modelReady` / `helperReady` 与 `issues` 摘要）、该引擎音色数量。
 
-- 不可用引擎也要列出，并说明需要下载模型或修复运行时；
+- 已启用但暂时不可用的引擎也要列出，并说明需要下载模型或修复运行时；
+- 未启用的引擎不展示、也不作为选项；当前 `mingTTS`（Ming-3.0-TTS）未启用，即使 capabilities 仍声明也要过滤；用户点名该引擎时说明未启用，并给出已启用引擎；
 - 不标注“默认”或“推荐”，避免引导用户跳过决策；只有用户主动要建议时才给建议并说明依据；
 - 引擎可读名只是展示层映射（见 `references/parameter-selection.md`），权威标识始终是 id；
   未知 id 原样展示，不得臆造。
@@ -80,6 +82,8 @@ B 级“默认”是 Skill 统一采用的固定值，与应用界面默认一�
 - 不抽样、不截断、不重排成“精选”，不预选；
 - 用户直接报音色名时：在所有引擎的候选中列出全部同名 / 同 id 组合，由用户确认引擎；
 - 音色属于哪个引擎以 `voices list` 返回的 `engineID` 为准。
+
+未启用的引擎（当前 `mingTTS`）已从全部展示模板移除，并在 `SKILL.md` / `references/parameter-selection.md` 中要求过滤，即使 capabilities 仍声明也不展示、不可提交。
 
 ### 4. 确认后提交
 
@@ -127,7 +131,6 @@ B 级“默认”是 Skill 统一采用的固定值，与应用界面默认一�
 | 2 | CosyVoice | cosyVoice | 就绪 | 19 |
 | 3 | MOSS-TTS Nano | mossTTSNano | 就绪 | 28 |
 | 4 | KokoroTTS | kokoroTTS | 就绪 | 45 |
-| 5 | Ming-3.0-TTS | mingTTS | 缺少模型 | 32 |
 
 音色表（选定引擎后）：
 
@@ -148,7 +151,8 @@ B 级“默认”是 Skill 统一采用的固定值，与应用界面默认一�
 
 以下为智能体行为场景，需在接入 Skill 的宿主里逐条人工验收；本轮只验证了 CLI 发现与 doctor 行为。
 
-- [ ] “把 deck.pptx 转成视频”但未指定引擎 / 音色：智能体展示全部引擎并停下，不提交；选定引擎后再展示该引擎全部音色。
+- [ ] “把 deck.pptx 转成视频”但未指定引擎 / 音色：智能体展示全部已启用引擎并停下，不提交；选定引擎后再展示该引擎全部音色。
+- [ ] 未启用引擎（Ming-3.0-TTS）不出现在引擎表或任何列表中，即使 capabilities 声明。
 - [ ] 用户已给出引擎 + 音色：不重复询问，doctor 校验后直接提交，摘要回显两者。
 - [ ] 用户只给引擎：只展示该引擎全部音色，不重复展示引擎。
 - [ ] 用户只给音色：列出包含该音色的全部引擎，请用户确认。
@@ -170,15 +174,16 @@ B 级“默认”是 Skill 统一采用的固定值，与应用界面默认一�
 - `capabilities` 增加 `engineName`，让智能体不必依赖展示层映射；
 - 若需要硬门禁，可让 CLI 在缺少 `--voice` 时也拒绝提交（`--engine` 已是必填）；
   这会破坏现有缺省调用，需单独评审与版本升级。
+- `capabilities` 暴露“用户可见/已启用”标志，或由 App 侧停止声明未启用引擎，Skill 就不需要维护过滤名单。
 
 ## 验证
 
 用仓库内 CLI（重新构建后为 protocol 2）对本机 App 实测：
 
-- `capabilities --format json` 返回 5 个引擎：`qwen3PresetVoice`、`cosyVoice`、`mossTTSNano`、
-  `kokoroTTS` 就绪，`mingTTS` 报“缺少完整的 Ming-3.0-TTS 模型”；
-- `voices list --engine <id>` 实测音色数：Qwen3 19、CosyVoice 19、MOSS 28、Kokoro 45、Ming 32；
-  `videohero.personal-voice.v1` 只在已授权的 Qwen3 / CosyVoice / MOSS / Ming 结果里出现，Kokoro 不出现；
+- `capabilities --format json` 声明 5 个引擎，其中 `mingTTS` 未启用；按规则过滤后应向用户展示 4 个已启用引擎：
+  `qwen3PresetVoice`、`cosyVoice`、`mossTTSNano`、`kokoroTTS`，均就绪；
+- `voices list --engine <id>` 实测音色数：Qwen3 19、CosyVoice 19、MOSS 28、Kokoro 45；
+  `videohero.personal-voice.v1` 只在已授权的 Qwen3 / CosyVoice / MOSS 结果里出现，Kokoro 不出现；
 - `doctor --workflow tts --voice F0_温柔邻家女声`（不带 `--engine`）返回
   `voice_requires_engine`，退出码 2；
 - `tts generate --text ... --output ...`（不带 `--engine`）返回 `invalid_request`

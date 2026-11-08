@@ -20,8 +20,9 @@ Use exact engine and voice ids returned by discovery. A model marked missing or 
 `--engine` and `--voice` are **required user decisions** for `tts generate` and
 `presentation render`, not agent defaults. The CLI requires `--engine` but lets `--voice` fall
 back to the engine's first voice; neither is the user's choice. Before submitting, show every
-engine from `capabilities.ttsEngineIDs` and then every voice from
-`voices list --engine <engine-id>`, and wait for an explicit choice. See
+engine VideoHero enables for users (filter out not-enabled engines such as `mingTTS` even when
+`capabilities` lists them), and then every voice from `voices list --engine <engine-id>`, and
+wait for an explicit choice. See
 [parameter-selection.md](parameter-selection.md) for the full interaction contract, display
 format, and edge cases.
 

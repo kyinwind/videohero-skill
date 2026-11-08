@@ -18,11 +18,12 @@ title, or the fact that an earlier generation used it.
 
 ## What the user sees
 
-### 1. Every engine
+### 1. Every enabled engine
 
-Show one table with **all** engine ids returned by `capabilities.ttsEngineIDs`. Include
-unavailable engines: the user needs the full picture, and an unavailable engine is a reason to
-ask for authorization, not a reason to hide it.
+Show one table with **every enabled** engine id returned by `capabilities.ttsEngineIDs`. Include
+enabled engines that are not ready: the user needs the full picture, and an unavailable engine is
+a reason to ask for authorization, not a reason to hide it. Engines that VideoHero has not enabled
+for users are excluded (see “Not-enabled engines” below).
 
 | 序号 | 引擎 | 引擎 ID | 状态 | 音色数 |
 |---|---|---|---|---|
@@ -30,7 +31,6 @@ ask for authorization, not a reason to hide it.
 | 2 | CosyVoice | cosyVoice | 就绪 | 19 |
 | 3 | MOSS-TTS Nano | mossTTSNano | 就绪 | 28 |
 | 4 | KokoroTTS | kokoroTTS | 就绪 | 45 |
-| 5 | Ming-3.0-TTS | mingTTS | 缺少模型 | 32 |
 
 - Status comes from `engineReadiness`: `modelReady`, `helperReady`, and `issues`. A non-ready
   engine must be described as such, with the advertised issue text.
@@ -46,10 +46,18 @@ ask for authorization, not a reason to hide it.
 | `cosyVoice` | CosyVoice |
 | `mossTTSNano` | MOSS-TTS Nano |
 | `kokoroTTS` | KokoroTTS |
-| `mingTTS` | Ming-3.0-TTS |
 
   An id missing from this table is shown as-is. Never add an engine that `capabilities` did not
   advertise, even if it appears in this table.
+
+### Not-enabled engines
+
+Some engines ship in the app but are not enabled for users. They are not choices: never display
+them in the engine table and never submit them, even if an older capability snapshot still lists
+them. Currently `mingTTS` (Ming-3.0-TTS) is not enabled. Readiness is not enablement: a ready
+engine can still be hidden. If the user asks for a not-enabled engine by name, say it is not
+enabled and offer the enabled engines instead. When VideoHero enables an engine, remove it from
+this list.
 
 ### 2. Every voice of the chosen engine
 
@@ -132,7 +140,7 @@ voice array. A representative shape:
 
 ```json
 {
-  "ttsEngineIDs": ["qwen3PresetVoice", "cosyVoice", "mossTTSNano", "kokoroTTS", "mingTTS"],
+  "ttsEngineIDs": ["qwen3PresetVoice", "cosyVoice", "mossTTSNano", "kokoroTTS"],
   "engineReadiness": [
     { "engineID": "qwen3PresetVoice", "modelReady": true, "helperReady": true, "issues": [] }
   ],
@@ -141,6 +149,9 @@ voice array. A representative shape:
   ]
 }
 ```
+
+A capability snapshot can still include not-enabled engines (currently `mingTTS`); filter them
+out before showing anything to the user.
 
 Use the installed result as authority. Fields can be absent on older snapshots; treat absence as
 unknown, never as “use the default”.
