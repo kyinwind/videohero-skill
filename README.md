@@ -74,9 +74,25 @@ CLI="/videohero-skill/绝对路径/bin/macos-universal/videohero"
 
 不得扫描 DerivedData、`.build`、旧测试包或 `/Applications/VideoHero.app` 内部，也不得调用 App 主程序和私有模型 Helper 代替 CLI。
 
+## 引擎与音色必须由用户明确指定
+
+生成语音或视频之前，智能体必须让用户在**全部引擎**里选一个引擎，再在该引擎的**全部音色**里选一个音色，
+并用稳定 ID 提交。不允许使用 CLI 默认值、历史任务或“看起来合适”替用户决定：
+
+```text
+capabilities（全部引擎 + 就绪状态 + 音色数）
+voices list --engine <选中的引擎>（该引擎全部音色，含“我的声音”）
+用户确认 engine id + voice id
+doctor → tts generate / presentation render
+```
+
+其余参数（脚本来源、画面比例、字幕、语言、输出路径等）在用户未指定时使用默认值，并在提交摘要中声明。
+`presentation export` 复用项目既有引擎和音色，不再询问。完整规则见
+[引擎与音色选择](references/parameter-selection.md)。
+
 ## 推荐视频调用方式
 
-先查询 capabilities、models 和 voices，运行具体参数的 doctor，然后提交：
+先查询 capabilities、models 和 voices，按上面的补参流程拿到用户确认的 engine 与 voice，运行具体参数的 doctor，然后提交：
 
 ```bash
 "$CLI" presentation export --project <project-id> --output "/absolute/demo.mp4"
@@ -110,7 +126,9 @@ CLI="/videohero-skill/绝对路径/bin/macos-universal/videohero"
 ## 文档
 
 - [CLI 协议参考](references/cli-protocol.md)
+- [引擎与音色选择](references/parameter-selection.md)
 - [安装与测试](references/setup-and-testing.md)
+- [引擎与音色显式选择设计](docs/20261108-engine-voice-explicit-selection.md)
 - [独立 CLI 分发方案](docs/20261019-cli-bundling-and-installation.md)
 - [预计耗时与实时进度设计](docs/20261019-cli-video-estimate-and-live-progress.md)
 - [CLI 项目持久化设计](docs/20261019-cli-project-persistence.md)

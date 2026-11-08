@@ -6,12 +6,16 @@
 
 ### Added
 
+- 新增引擎与音色“补参”机制：生成前必须把 capabilities 里的全部引擎、以及所选引擎的全部音色展示给用户，由用户显式指定 `--engine` 与 `--voice`。
+- 新增 `references/parameter-selection.md`：展示模板、委托选择、无交互宿主、歧义与失败重问规则。
 - 协议版本 2：新增终态 `needs_review`（退出码 5）与工作流 `export-project`。
 - 新增 `videohero presentation export --project <uuid>`：人工质检完成后复用既有讲解音频完成导出，不重新生成 TTS。
 - `needs_review` 返回体携带 `reviewItems`（`page` / `reason` / `audioPath`）与 `nextAction`，供智能体把待审页面原样转告用户。
 
 ### Changed
 
+- `tts generate` 与 `presentation render` 提交前，引擎和音色必须来自用户显式选择；智能体不得使用 CLI 缺省引擎/音色，也不得用标题、历史任务或记忆推断。
+- 引擎与音色以外的参数继续使用默认值，并在提交摘要中声明；`presentation export` 复用项目既有引擎和音色，不重新询问。
 - 智能体在收到 `needs_review` / 退出码 5 时**不得重试、不得重建项目**，应转告用户去 VideoHero 完成人工质检，再调用 `presentation export`。
 - `capabilities.workflows` 现在会声明 `export-project`；`presentation.supportsExportExistingProject` 标识是否支持续跑导出。
 - 协议版本不再兼容 1；CLI 与 App 必须同版本。

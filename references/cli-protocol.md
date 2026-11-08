@@ -1,6 +1,6 @@
 # VideoHero CLI protocol reference
 
-This reference describes the intended protocol v1 surface. The installed result of `videohero capabilities --format json` is authoritative. If a command or option below is not advertised, do not use it.
+This reference describes the protocol v2 surface. The installed result of `videohero capabilities --format json` is authoritative. If a command or option below is not advertised, do not use it.
 
 ## Discovery and preflight
 
@@ -14,6 +14,25 @@ videohero doctor --workflow <tts|presentation-to-video> --format json
 ```
 
 Use exact engine and voice ids returned by discovery. A model marked missing or an engine marked unavailable is a preflight failure; do not begin a long generation and hope that it repairs itself.
+
+### Engine and voice are user choices
+
+`--engine` and `--voice` are **required user decisions** for `tts generate` and
+`presentation render`, not agent defaults. The CLI requires `--engine` but lets `--voice` fall
+back to the engine's first voice; neither is the user's choice. Before submitting, show every
+engine from `capabilities.ttsEngineIDs` and then every voice from
+`voices list --engine <engine-id>`, and wait for an explicit choice. See
+[parameter-selection.md](parameter-selection.md) for the full interaction contract, display
+format, and edge cases.
+
+Only these two parameters are gated. Every other parameter keeps its documented default and
+must not be turned into a question: `language=auto`, `script-source=notes-or-body`,
+`aspect=source`, WAV output, speed 1.0, and an output path derived from the input.
+`subtitles=burn` is the Skill default and must be passed explicitly, because the CLI's own
+fallback is `off`. `presentation export` reuses the project's existing engine and voice.
+
+If `--voice` is supplied without `--engine`, `doctor` reports `voice_requires_engine`; that is
+the CLI's own guard, not permission to add an engine by assumption.
 
 ### Personal voice discovery
 
@@ -39,6 +58,7 @@ Parse the returned job id, then wait with `videohero jobs wait <job-id> --format
 
 Before submission:
 
+- Confirm `--engine` and `--voice` are the user's explicit choice (see [Engine and voice are user choices](#engine-and-voice-are-user-choices)).
 - Confirm the source is not empty.
 - Confirm the requested output format is advertised.
 - Do not overwrite an existing output without the user's instruction.
@@ -49,7 +69,7 @@ The current P0 implementation advertises WAV only. M4A remains part of the inten
 
 ## Presentation-to-video
 
-Protocol v1 uses both the PPTX and its matching PDF. The PDF supplies slide rendering; the PPTX supplies body text and speaker notes.
+Protocol v2 uses both the PPTX and its matching PDF. The PDF supplies slide rendering; the PPTX supplies body text and speaker notes.
 
 ```bash
 videohero presentation render \
@@ -72,6 +92,7 @@ videohero jobs wait <job-id> --format ndjson
 
 Before submission:
 
+- Confirm `--engine` and `--voice` are the user's explicit choice (see [Engine and voice are user choices](#engine-and-voice-are-user-choices)).
 - Use absolute, readable PPTX and PDF paths.
 - Run preflight and require matching slide/page counts.
 - `notes-or-body` uses notes when non-empty and otherwise uses extracted body text. Use `notes` only when the user expects empty notes to be an error.
