@@ -2,6 +2,20 @@
 
 本文件记录 VideoHero Skill 的重要变更。
 
+## [1.3.3] - 2026-11-13
+
+### Changed
+
+- 使用 VideoHero 1.3.3 当前共享自动化源码重新构建 Universal CLI，继续使用稳定协议版本 2。
+- 使用 Developer ID Application 重新签名并完成 Apple 公证，修复上一份发行二进制的 arm64 严格验签失败。
+- 更新 CLI SHA-256 清单，并将 README 与安装测试参考中的版本匹配示例更新为 1.3.3。
+- 适配 VideoHero 采用 SyntheticSpeechKit 0.3.0 session API 后的应用版本；该变化位于 App 内部，CLI 命令、参数和 JSON 协议不变。
+
+### Data
+
+- 无数据库、Skill 持久化或 Automation App Group 交换格式变更。
+- 无用户界面变化。
+
 ## [1.3.2] - 2026-11-08
 
 ### Added

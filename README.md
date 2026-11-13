@@ -15,20 +15,20 @@ defaults read /Applications/VideoHero.app/Contents/Info.plist CFBundleShortVersi
 
 App 不在 `/Applications` 时替换为实际路径。以 `CFBundleShortVersionString` 为准，不看 build number。
 
-新克隆时直接检出同名 tag（示例为 `1.3.2`）：
+新克隆时直接检出同名 tag（示例为 `1.3.3`）：
 
 ```bash
-git clone --branch 1.3.2 --depth 1 https://github.com/kyinwind/videohero-skill.git
+git clone --branch 1.3.3 --depth 1 https://github.com/kyinwind/videohero-skill.git
 ```
 
 已有仓库时切换 tag：
 
 ```bash
 git fetch --tags --force
-git checkout 1.3.2
+git checkout 1.3.3
 ```
 
-`--force` 用于更新被重建的 tag；本地已有旧的 `1.3.2` tag 时，普通的 `git fetch --tags`
+`--force` 用于更新被重建的 tag；本地已有旧的同名 tag 时，普通的 `git fetch --tags`
 会拒绝覆盖，必须用上面的命令重新拉取。
 
 验证 CLI 与 App 的协议一致：
@@ -44,7 +44,7 @@ git checkout 1.3.2
 tag 名是入口，`protocolVersion` 是最终依据。如果某个 tag 的 CLI 与 App 协议不一致，说明该 tag
 未正确配套：不要手工修改，改用能与 App 协议配对的 tag，并向维护者反馈该 tag。
 
-- 当前只发布 `1.3.2` tag；`1.3.1` 的 Skill 已撤回，App `1.3.1` 及更早版本请先升级到 `1.3.2` 或更高。
+- `1.3.2` 已发布；本工作树已完成 `1.3.3` 配套更新，发布时应创建同名 tag。`1.3.1` 的 Skill 已撤回，App `1.3.1` 及更早版本请先升级到 `1.3.2` 或更高。
 - `main` 是最新开发状态，可能领先于已发布 App，只用于开发联调。
 - 如果 App 版本没有同名 tag，说明该版本尚未配套发布 Skill；不要用邻近 tag 顶替：`1.3.1` 及更早请升级 App，
   更新的版本请等待对应 tag。

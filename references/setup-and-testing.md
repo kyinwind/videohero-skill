@@ -5,11 +5,11 @@ Use this reference only for installation, first-run diagnostics, or local integr
 ## Version matching
 
 The Skill tag name equals the installed VideoHero App's marketing version
-(`CFBundleShortVersionString`). Install or check out that tag, for example tag `1.3.2` for App
-`1.3.2`; do not use `main` for a production install, because it may be ahead of the released App.
+(`CFBundleShortVersionString`). Install or check out that tag, for example tag `1.3.3` for App
+`1.3.3`; do not use `main` for a production install, because it may be ahead of the released App.
 If the App version has no matching tag, stop: the App version has no released Skill yet.
 `1.3.1` was withdrawn because its bundled CLI is protocol 1; App versions 1.3.1 and older must be
-updated to 1.3.2 or later before installing tag `1.3.2`.
+updated to 1.3.2 or later before installing the matching protocol-2 Skill tag.
 
 ```bash
 defaults read /Applications/VideoHero.app/Contents/Info.plist CFBundleShortVersionString
