@@ -8,8 +8,8 @@ The Skill tag name equals the installed VideoHero App's marketing version
 (`CFBundleShortVersionString`). Install or check out that tag, for example tag `1.3.3` for App
 `1.3.3`; do not use `main` for a production install, because it may be ahead of the released App.
 If the App version has no matching tag, stop: the App version has no released Skill yet.
-`1.3.1` was withdrawn because its bundled CLI is protocol 1; App versions 1.3.1 and older must be
-updated to 1.3.2 or later before installing the matching protocol-2 Skill tag.
+`1.3.1` was withdrawn because its bundled CLI used the obsolete protocol 1. The current Skill
+expects protocol 3; always use the tag matching the installed App instead of mixing binaries.
 
 ```bash
 defaults read /Applications/VideoHero.app/Contents/Info.plist CFBundleShortVersionString
@@ -89,33 +89,11 @@ For a personal-voice test, the user must first complete VideoHero's visible “�
 
 ## Safe smoke tests
 
-Use new absolute output paths and do not add `--overwrite` for the first run:
-
-```bash
-"$VIDEOHERO_CLI" doctor \
-  --workflow tts \
-  --engine <engine-id> \
-  --voice <voice-id> \
-  --audio-format wav \
-  --format json
-
-"$VIDEOHERO_CLI" tts generate \
-  --text "你好，这是 VideoHero 智能体接口测试。" \
-  --output "/absolute/new/path/videohero-agent-test.wav" \
-  --engine <engine-id> \
-  --voice <voice-id> \
-  --format json
-```
-
-Parse the job id and follow it with:
-
-```bash
-"$VIDEOHERO_CLI" jobs wait <job-id> --format ndjson
-```
+The CLI does not provide standalone text-to-speech or audio-file generation. Smoke tests use a matching PPTX/PDF pair and the presentation workflow only.
 
 For presentation testing, use a matching PPTX/PDF pair. Confirm that multiple NDJSON lines arrive while running. If compatible export history exists, later events may contain estimated total and remaining seconds; a first run may legitimately have no estimate.
 
-Also verify that a presentation project appears in VideoHero while it is running and remains editable after success. Confirm a TTS-only job creates no project. For a disposable presentation job, test cancellation and confirm the incomplete project is removed.
+Also verify that a presentation project appears in VideoHero while it is running and remains editable after success. For a disposable presentation job, test cancellation and confirm the incomplete project is removed.
 
 ## Reporting failures
 

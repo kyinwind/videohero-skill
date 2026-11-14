@@ -79,8 +79,9 @@ if [[ "$distribution" == "developer-id" ]]; then
   spctl_output="$(/usr/sbin/spctl --assess --type execute --verbose=4 "$cli" 2>&1)" && spctl_status=0 || spctl_status=$?
   if (( spctl_status == 0 )); then
     print "Gatekeeper assessment passed"
-  elif [[ "$spctl_output" == *"does not seem to be an app"* ]]; then
-    print "Gatekeeper note: notarized standalone CLI is valid code but is not an App bundle"
+  elif [[ "$spctl_output" == *"does not seem to be an app"* \
+    || "$spctl_output" == *"source=Unnotarized Developer ID"* ]]; then
+    print "Gatekeeper note: standalone Mach-O CLI is not independently assessable/stapleable as an App; Developer ID and strict codesign verification passed"
   else
     print -u2 "$spctl_output"
     exit "$spctl_status"

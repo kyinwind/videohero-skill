@@ -1,4 +1,4 @@
 interface:
   display_name: "VideoHero"
-  short_description: "Create speech and narrated videos with VideoHero"
-  default_prompt: "Use $videohero to generate media with my local VideoHero app. Ask me to choose the engine and voice before generating."
+  short_description: "Manage and render narrated PPT videos with VideoHero"
+  default_prompt: "Use $videohero to inspect or edit my local VideoHero PPT project, or render it as a narrated video. Ask me to choose the engine and voice before a new import or render."

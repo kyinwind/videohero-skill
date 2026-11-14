@@ -1,6 +1,6 @@
 # VideoHero Skill
 
-让 Codex、WorkBuddy、Qoder 等智能体通过 VideoHero 官方 CLI 生成语音和带讲解的视频，而不是操作图形界面或访问内部数据库。
+让 Codex、WorkBuddy、Qoder 等智能体通过 VideoHero 官方 CLI 管理 PPT 视频项目、改写逐页讲解词和图片，并生成带讲解的视频，而不是操作图形界面或访问内部数据库。
 
 ## 选择与 VideoHero 版本一致的 Skill
 
@@ -37,14 +37,14 @@ git checkout 1.3.3
 ./bin/macos-universal/videohero version --format json
 ```
 
-`protocolVersion` 才用于判断兼容性（当前为 2）；`cliVersion` 是 CLI 自身版本，不参与判断。
+`protocolVersion` 才用于判断兼容性（当前为 3）；`cliVersion` 是 CLI 自身版本，不参与判断。
 版本不匹配时，`capabilities` 会解码失败，或 `doctor` 报 `protocol_compatible` 失败（退出码 7）：
 此时切到同名 tag 或升级 App，不要手工替换二进制。
 
 tag 名是入口，`protocolVersion` 是最终依据。如果某个 tag 的 CLI 与 App 协议不一致，说明该 tag
 未正确配套：不要手工修改，改用能与 App 协议配对的 tag，并向维护者反馈该 tag。
 
-- `1.3.2` 已发布；本工作树已完成 `1.3.3` 配套更新，发布时应创建同名 tag。`1.3.1` 的 Skill 已撤回，App `1.3.1` 及更早版本请先升级到 `1.3.2` 或更高。
+- `1.3.3` 使用 CLI 0.2.0、协议 3，包含项目与页面自动化能力；`1.3.1` 的 Skill 已撤回，App `1.3.1` 及更早版本请先升级。
 - `main` 是最新开发状态，可能领先于已发布 App，只用于开发联调。
 - 如果 App 版本没有同名 tag，说明该版本尚未配套发布 Skill；不要用邻近 tag 顶替：`1.3.1` 及更早请升级 App，
   更新的版本请等待对应 tag。
@@ -55,9 +55,10 @@ tag 名是入口，`protocolVersion` 是最终依据。如果某个 tag 的 CLI 
 
 - 查询 VideoHero 版本、协议、模型、语音引擎和音色能力。
 - 生成前要求用户显式选择引擎与音色：展示全部候选，用稳定 ID 提交。
-- 在用户已于 VideoHero 完成授权时，发现并使用“我的声音”生成 TTS 或 PPT 视频。
-- 将文字生成 WAV 音频；TTS 是临时任务，不创建项目。
+- 在用户已于 VideoHero 完成授权时，发现并使用“我的声音”生成 PPT 视频。
 - 使用匹配的 PPTX/PDF 生成 MP4，默认创建并持续保存可编辑的 VideoHero 项目。
+- 查询和修改项目名称、分辨率、字幕、字体、引擎、音色与生成风格。
+- 读取或原子回写指定页面的讲解词、结构化多人对话、图片和页面设置，并支持恢复一次修改。
 - 查询、等待和取消异步 job，以 NDJSON 持续接收阶段、百分比和说明。
 - 当 VideoHero 有兼容历史样本时，读取预计总耗时和预计剩余时间。
 - 支持 `needs_review` 人工质检终态；在 App 内确认后可用 `presentation export` 复用讲解音频续跑导出。
@@ -65,7 +66,7 @@ tag 名是入口，`protocolVersion` 是最终依据。如果某个 tag 的 CLI 
 
 ## 运行结构
 
-本仓库同时包含 Skill 指令和独立 `videohero` CLI。CLI 负责命令、输入暂存、job 提交、进度读取和产物交付；TTS、PPT/PDF 导入、项目保存和视频生成仍由 TestFlight/正式渠道安装的 VideoHero App 执行。
+本仓库同时包含 Skill 指令和独立 `videohero` CLI。CLI 负责命令、输入暂存、job 提交、项目/页面修改、进度读取和产物交付；PPT/PDF 导入、项目保存、讲解音频生成、质检和视频生成仍由 TestFlight/正式渠道安装的 VideoHero App 执行。
 
 ```text
 智能体 → 独立 videohero CLI → Automation App Group → VideoHero App
@@ -99,6 +100,8 @@ tag 名是入口，`protocolVersion` 是最终依据。如果某个 tag 的 CLI 
 ```
 
 安装脚本会先验证 SHA-256、Developer ID 签名、安全时间戳、Hardened Runtime、Team ID、Automation App Group、Universal 架构和 CLI 版本，再原子复制。Apple 公证状态已验证为 `Accepted`；`spctl` 对裸 Mach-O CLI 返回“有效代码但不是 App”时显示说明而不误判失败。Apple Development 构建只用于开发机联调，不能作为公开发布版本。安装过程不会现场重签、删除 quarantine 或覆盖无法确认的其他工具。
+
+`1.3.3` 所带 CLI 为 `0.2.0`、协议 `3`，已使用 `Developer ID Application: xuehui Yang (AL7WHQ783W)` 正式签名并通过 Apple 公证。
 
 安装到 PATH 的 CLI 是该 tag 的副本；升级 App 后要重新切换 tag 并重新安装。
 
@@ -142,14 +145,14 @@ git checkout <新版本>
 
 ## 引擎与音色必须由用户明确指定
 
-生成语音或视频之前，智能体必须让用户在**全部已启用引擎**里选一个引擎，再在该引擎的**全部音色**里选一个音色，
+生成 PPT 视频之前，智能体必须让用户在**全部已启用引擎**里选一个引擎，再在该引擎的**全部音色**里选一个音色，
 并用稳定 ID 提交。未启用的引擎不展示、也不作为选项。不允许让 CLI 兜底的音色值、历史任务或“看起来合适”替用户决定：
 
 ```text
 capabilities（全部已启用引擎 + 就绪状态 + 音色数）
 voices list --engine <选中的引擎>（该引擎全部音色，含“我的声音”）
 用户确认 engine id + voice id
-doctor → tts generate / presentation render
+doctor → presentation render
 ```
 
 其余参数（脚本来源、画面比例、字幕、语言、输出路径等）在用户未指定时使用默认值，并在提交摘要中声明。
@@ -199,6 +202,31 @@ CLI 自身的字幕缺省是 `off`，Skill 默认生成字幕，所以提交时�
 
 `presentation export` 复用已生成的讲解音频，不重新生成 TTS；仍有未确认页面时会再次返回 `needs_review`。
 
+## 智能体修改现有项目
+
+先查询项目和页面，保留返回的修订令牌与摘要：
+
+```bash
+"$CLI" projects list --format json
+"$CLI" projects get --project <project-id> --format json
+"$CLI" presentation pages get --project <project-id> \
+  --pages 1,3-5 --include body,notes,script,image \
+  --output-dir "/absolute/path/page-images" --format json
+```
+
+项目设置和页面内容都通过 JSON 请求文件修改。多页修改先执行 `--dry-run`，确认后再使用最新修订正式提交：
+
+```bash
+"$CLI" projects update --project <project-id> --request "/absolute/project-update.json" --dry-run --wait --format json
+"$CLI" presentation pages apply --project <project-id> --request "/absolute/pages-update.json" --dry-run --wait --format json
+```
+
+正式写入成功后会返回 `editID`，可分别用 `projects restore` 或 `presentation pages restore` 恢复。图片必须匹配项目画面比例；多人对话应提交结构化 `speakers` 与 `turns`，不要把“张三说：”等标签混入台词正文。补生成缺失音频并执行完整质检与视频导出时使用：
+
+```bash
+"$CLI" presentation render-project --project <project-id> --output "/absolute/path/deck.mp4" --wait --format json
+```
+
 ## 使用“我的声音”
 
 先在 VideoHero 的“我的声音”界面完成 Pro 校验、声音使用同意、登记和验证，然后按引擎查询：
@@ -220,6 +248,7 @@ CLI 自身的字幕缺省是 `off`，Skill 默认生成字幕，所以提交时�
 - [预计耗时与实时进度设计](docs/20261019-cli-video-estimate-and-live-progress.md)
 - [CLI 项目持久化设计](docs/20261019-cli-project-persistence.md)
 - [CLI“我的声音”支持设计](docs/20261020-cli-personal-voice.md)
+- [协议 3 CLI 升级与正式发布方案](docs/20261114-protocol3-cli-release.md)
 
 ## 安全边界
 

@@ -3,7 +3,7 @@
 `--engine` and `--voice` are **user decisions**, not agent defaults. The CLI requires
 `--engine` and treats `--voice` as optional (falling back to the engine's first voice); neither
 is the user's choice, so an agent must not rely on CLI behavior. This reference is mandatory for
-`tts generate` and `presentation render`. `presentation export` reuses the project's existing
+`presentation render`. `presentation export` reuses the project's existing
 engine and voice, so it needs no new choice.
 
 ## The two required choices
@@ -96,7 +96,7 @@ and list **every** returned entry:
    even then, state the final pair in the submission summary and how to change it.
 8. **The host cannot ask the user** (batch/one-shot execution). Do not generate. Return the full
    engine table, explain that the voice list needs the engine first, and provide the exact
-   commands for the next turn (`voices list --engine <id>`, then the `tts generate` /
+   commands for the next turn (`voices list --engine <id>`, then the
    `presentation render` template with `--engine` and `--voice` placeholders).
 9. **The user names an engine by display name.** Map it to an id through the display-name table
    only when exactly one advertised engine matches; otherwise show the engine table and ask.
@@ -108,7 +108,7 @@ and list **every** returned entry:
 
 ```bash
 videohero voices list --engine <engine-id> --format json   # confirm the voice id is present
-videohero doctor --workflow <tts|presentation-to-video> --engine <engine-id> --voice <voice-id> --format json
+videohero doctor --workflow presentation-to-video --engine <engine-id> --voice <voice-id> --format json
 ```
 
 For presentation, add `--subtitles burn` (and any other value you intend to submit) to `doctor`,

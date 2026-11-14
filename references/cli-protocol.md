@@ -1,6 +1,6 @@
 # VideoHero CLI protocol reference
 
-This reference describes the protocol v2 surface. The installed result of `videohero capabilities --format json` is authoritative. If a command or option below is not advertised, do not use it.
+This reference describes the protocol v3 surface. The installed result of `videohero capabilities --format json` is authoritative. If a command or option below is not advertised, do not use it.
 
 ## Discovery and preflight
 
@@ -10,14 +10,14 @@ videohero capabilities --format json
 videohero voices list --format json
 videohero voices list --engine <engine-id> --format json
 videohero models list --format json
-videohero doctor --workflow <tts|presentation-to-video> --format json
+videohero doctor --workflow presentation-to-video --format json
 ```
 
 Use exact engine and voice ids returned by discovery. A model marked missing or an engine marked unavailable is a preflight failure; do not begin a long generation and hope that it repairs itself.
 
 ### Engine and voice are user choices
 
-`--engine` and `--voice` are **required user decisions** for `tts generate` and
+`--engine` and `--voice` are **required user decisions** for
 `presentation render`, not agent defaults. The CLI requires `--engine` but lets `--voice` fall
 back to the engine's first voice; neither is the user's choice. Before submitting, show every
 engine VideoHero enables for users (filter out not-enabled engines such as `mingTTS` even when
@@ -26,9 +26,9 @@ wait for an explicit choice. See
 [parameter-selection.md](parameter-selection.md) for the full interaction contract, display
 format, and edge cases.
 
-Only these two parameters are gated. Every other parameter keeps its documented default and
+Only these two parameters are gated. Every other presentation parameter keeps its documented default and
 must not be turned into a question: `language=auto`, `script-source=notes-or-body`,
-`aspect=source`, WAV output, speed 1.0, and an output path derived from the input.
+`aspect=source`, and an output path derived from the input.
 `subtitles=burn` is the Skill default and must be passed explicitly, because the CLI's own
 fallback is `off`. `presentation export` reuses the project's existing engine and voice.
 
@@ -41,36 +41,9 @@ VideoHero exposes the user's authorized “我的声音” with the stable id `v
 
 Use the id only when the current `voices list --engine <engine-id>` result contains that exact entry. The title is localized and is not an identifier. Absence means the personal voice is unavailable or its Pro/consent/enrollment/reference-audio authorization is incomplete or invalid. The agent may ask the user to finish the “我的声音” flow in VideoHero, but must not perform or bypass that flow. Re-run discovery after the user completes it.
 
-## Text-to-speech
-
-Use exactly one of `--text` and `--text-file`. Prefer a UTF-8 text file for multi-paragraph, quoted, shell-sensitive, or private content.
-
-```bash
-videohero tts generate \
-  --text-file "/absolute/path/script.txt" \
-  --output "/absolute/path/narration.wav" \
-  --engine <engine-id> \
-  --voice <voice-id> \
-  --language auto \
-  --format json
-```
-
-Parse the returned job id, then wait with `videohero jobs wait <job-id> --format ndjson` when the current turn should follow progress.
-
-Before submission:
-
-- Confirm `--engine` and `--voice` are the user's explicit choice (see [Engine and voice are user choices](#engine-and-voice-are-user-choices)).
-- Confirm the source is not empty.
-- Confirm the requested output format is advertised.
-- Do not overwrite an existing output without the user's instruction.
-- If language is omitted or `auto`, report a language-detection warning from the result rather than hiding it.
-- The personal voice id `videohero.personal-voice.v1` requires authorization already completed in VideoHero and may be used only with an engine that advertised it. Never work around `authorization_required`.
-
-The current P0 implementation advertises WAV only. M4A remains part of the intended v1 surface but must not be requested until `capabilities` advertises it. Confirm the final job state and artifact path; do not infer success from a progress value of 1.0 alone.
-
 ## Presentation-to-video
 
-Protocol v2 uses both the PPTX and its matching PDF. The PDF supplies slide rendering; the PPTX supplies body text and speaker notes.
+Protocol v3 uses both the PPTX and its matching PDF. The PDF supplies slide rendering; the PPTX supplies body text and speaker notes.
 
 ```bash
 videohero presentation render \
@@ -105,6 +78,38 @@ Before submission:
 
 Expected primary artifact is MP4. The current P0 implementation does not return a separate SRT artifact. Preserve and report any warnings returned by the job.
 
+### Import without rendering
+
+```bash
+videohero presentation import --pptx <pptx> --pdf <pdf> --engine <id> [--voice <id>] [--wait] --format json
+```
+
+This creates an editable project and returns its `projectID` without generating narration or video. Engine and voice still must be selected explicitly because later dialogue and rendering are validated against that engine.
+
+## Project and page editing
+
+```bash
+videohero projects list --format json
+videohero projects get --project <uuid> --format json
+videohero projects update --project <uuid> --request <project-update.json> [--dry-run] [--wait] --format json
+videohero projects restore --project <uuid> --edit <edit-id> [--wait] --format json
+
+videohero presentation pages get --project <uuid> [--pages 1,3-5] [--include body,notes,script,image] [--output-dir <dir>] [--wait] --format json
+videohero presentation pages apply --project <uuid> --request <pages-update.json> [--dry-run] [--idempotency-key <key>] [--wait] --format json
+videohero presentation pages restore --project <uuid> --edit <edit-id> [--wait] --format json
+videohero presentation render-project --project <uuid> --output <mp4> [--overwrite] [--wait] --format json
+```
+
+Always read before writing. Project updates require the latest `expectedSettingsRevision`; page updates should carry `expectedSettingsRevision`, `expectedContentRevision`, and each edited page's `expectedTextDigest`/`expectedImageDigest`. A conflict means the project changed: do not overwrite it or mechanically retry. Query again and reconcile the user's requested change.
+
+Page narration accepts either plain content or structured dialogue. Structured dialogue defines stable speaker ids and voice ids separately from ordered turns. Do not include speaker labels in turn text. VideoHero compiles turns into native UTF-16 voice ranges and validates every voice against the project's current engine.
+
+For image reads, include `image` and provide `--output-dir`. For image writes, the JSON request points to an absolute local `sourcePath` and declares its SHA-256. The CLI stages the file; VideoHero accepts only decodable PNG/JPEG within its safety limits and with the same aspect ratio as the project. Image-only edits invalidate previews but retain narration audio and subtitle alignment.
+
+Successful non-dry-run mutations return an `editID`. Restore commands restore the corresponding VideoHero-managed snapshot. Never edit project or snapshot files directly.
+
+`render-project` generates missing or invalid narration, applies the normal quality gates, and may return `needs_review`. `presentation export` is only for projects whose narration is already valid; otherwise it returns `project_requires_render`.
+
 
 ### Presentation export
 
@@ -118,7 +123,7 @@ The app writes the rendered video into its own project storage; the CLI delivers
 
 When `capabilities.presentation.persistsProject` is `true`, `presentation render` also creates an editable VideoHero project automatically. The project is created after preflight and is visible in VideoHero while generation is running; successful projects retain their PPTX/PDF, slide images, narration audio, previews, and an internal exported video in VideoHero's managed project storage. No `--save-project` parameter exists or is needed. A failed or cancelled import may be removed using the same cleanup semantics as a failed UI import.
 
-This persistence rule applies only to presentation jobs. `tts generate` remains a temporary audio job and does not add an item to VideoHero's project list.
+The CLI does not provide standalone text-to-speech or audio-file generation. Presentation narration remains internal to the editable project and video-export workflow.
 
 After VideoHero parses the presentation and resolves narration, status updates may include:
 
@@ -171,6 +176,10 @@ Common error handling:
 | `authorization_required` | Ask the user to complete or restore the named VideoHero/macOS authorization, then refresh capabilities and `voices list`. Never switch voices silently. |
 | `automation_disabled` | Ask the user to enable local agent control in VideoHero settings. |
 | `protocol_incompatible` | Stop and request a VideoHero/skill update. |
+| `project_settings_conflict` / `project_conflict` | Re-read the project and reconcile; never overwrite with a stale request. |
+| `script_conflict` / `image_conflict` | Re-read affected pages and preserve concurrent user edits. |
+| `image_aspect_ratio_mismatch` | Generate or crop an image to the advertised project aspect ratio. |
+| `project_requires_render` | Run `presentation render-project`; do not use export as a quality-check bypass. |
 | `restart_interrupted` | Query artifacts and caches, then offer a retry with the same request and idempotency key. |
 
 For uncertain submission outcomes, query by job id or reuse the same `--idempotency-key`. Never create repeated expensive jobs merely because the waiting process disconnected.

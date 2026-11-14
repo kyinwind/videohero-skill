@@ -2,19 +2,32 @@
 
 本文件记录 VideoHero Skill 的重要变更。
 
-## [1.3.3] - 2026-11-13
+## [1.3.3] - 2026-11-14
+
+### Added
+
+- 适配自动化协议 3：新增项目列表/查询/设置修改/恢复、PPT 只导入、逐页文本与图片读取、原子批量写回、编辑恢复及 `render-project`。
+- 支持智能体把普通讲解词改写为结构化多人对话；说话人与音色映射独立于台词文本。
+- 页面图片写回增加摘要、解码、安全尺寸及项目画面比例约束。
+- 随 Skill 提供 CLI 0.2.0、协议 3 的 Universal Binary，并更新 SHA-256 清单。
 
 ### Changed
 
-- 使用 VideoHero 1.3.3 当前共享自动化源码重新构建 Universal CLI，继续使用稳定协议版本 2。
-- 使用 Developer ID Application 重新签名并完成 Apple 公证，修复上一份发行二进制的 arm64 严格验签失败。
-- 更新 CLI SHA-256 清单，并将 README 与安装测试参考中的版本匹配示例更新为 1.3.3。
-- 适配 VideoHero 采用 SyntheticSpeechKit 0.3.0 session API 后的应用版本；该变化位于 App 内部，CLI 命令、参数和 JSON 协议不变。
+- Skill 要求项目和页面写入携带最新修订令牌；冲突时重新查询并协调，不允许用旧数据覆盖。
+- CLI 0.2.0 已使用 `Developer ID Application: xuehui Yang (AL7WHQ783W)` 正式签名并通过 Apple 公证；发布验证覆盖双架构、Hardened Runtime、安全时间戳、Team ID、Automation App Group 和非沙盒属性。
+- 发布脚本强制校验 CLI 0.2.0 与协议 3，对同一签名归档的瞬时公证网络失败进行有限重试，并正确处理裸 Mach-O CLI 的说明性 `spctl` 结果。
+- 智能体入口说明改为项目管理、逐页内容修改和视频渲染，不再把独立文字转语音列为 Skill 能力。
+- 适配 VideoHero 采用 SyntheticSpeechKit 0.3.0 session API 后的应用版本；该变化位于 App 内部。
+
+### Removed
+
+- 移除 `videohero tts generate` 及智能体直接从文本生成音频文件的使用说明。
+- capabilities 不再公布 `text-to-speech` 工作流；Skill 不提供替代音频生成或交付流程。
 
 ### Data
 
-- 无数据库、Skill 持久化或 Automation App Group 交换格式变更。
-- 无用户界面变化。
+- 无 SwiftData 数据库结构或 Skill 持久化变更；VideoHero 在项目目录新增最多 20 份自动化编辑快照，用于恢复项目/页面修改。
+- 无用户界面变化，无新增中英文界面资源。
 
 ## [1.3.2] - 2026-11-08
 
