@@ -170,7 +170,7 @@ CLI 仍是 App 外部的薄客户端：
 
 - [ ] 用户打包并安装包含协议 3 的 VideoHero 正式/TestFlight 版本。
 - [ ] 使用新 CLI 完成协议 3 项目查询、页面读取和 dry-run 修改验证。
-- [ ] 删除旧 `1.3.3`，在本次协议 3 提交上重建并推送同名标签。
+- [x] 删除旧 `1.3.3`，在本次协议 3 提交上重建并推送同名标签。
 
 ## 10. 实施与验证记录
 
@@ -187,6 +187,7 @@ CLI 仍是 App 外部的薄客户端：
 - skill-creator `quick_validate.py` 通过。
 - VideoHero 与 videohero-skill 两个仓库的 `git diff --check` 通过。
 - CLI 帮助已确认包含 `projects list/get/update/restore`、`presentation import/render-project` 和 `presentation pages apply`。
+- Skill 代码、文档与正式 CLI 已提交并推送；原 `1.3.3` 标签已删除，新 `1.3.3` 已在协议 3 发布提交上重建。
 
 本记录只证明 CLI 构建、签名、公证、发布副本和静态协议入口符合要求。协议 3 App 的真实项目读写与页面修改仍需用户安装新的正式/TestFlight 版本后完成阶段 E 验收。
 
